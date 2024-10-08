@@ -28,6 +28,6 @@ func main() {
 
 	srv := serverConfig.NewServer()
 
-	slog.Info(fmt.Sprintf("Starting server on port %d", serverConfig.Port))
+	slog.Info(fmt.Sprintf("Starting server on port %s", serverConfig.Port))
 	slog.Error(srv.ListenAndServe().Error())
 }

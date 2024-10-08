@@ -26,6 +26,10 @@ func (s *Server) NewServer() *http.Server {
 
 	api.HandleFunc("/health", s.HealthCheck).Methods("GET")
 
+	api.HandleFunc("/create-index", s.CreateIndex).Methods("POST")
+
+	api.HandleFunc("/add-document", s.AddFakeData).Methods("POST")
+
 	return &http.Server{
 		Handler:  api,
 		Addr:     fmt.Sprintf(":%s", s.Port),
