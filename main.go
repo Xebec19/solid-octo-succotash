@@ -21,6 +21,9 @@ func main() {
 		slog.Error(err.Error())
 	}
 
+	slog.Info("opensearch connected")
+	slog.Info(fmt.Sprint(opensearchClient.Client.Info()))
+
 	serverConfig := &internal.Server{
 		Port:          config.SERVER_ADDRESS,
 		OpensearchAPI: opensearchClient,

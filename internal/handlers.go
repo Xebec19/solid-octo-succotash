@@ -7,9 +7,10 @@ import (
 )
 
 func (s *Server) CreateIndex(w http.ResponseWriter, r *http.Request) {
-	res, err := s.OpensearchAPI.CreateIndex("fake-data")
+	res, err := s.OpensearchAPI.CreateIndex("go-test-index2")
 
 	if err != nil {
+		slog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -21,9 +22,10 @@ func (s *Server) CreateIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) AddFakeData(w http.ResponseWriter, r *http.Request) {
-	res, err := s.OpensearchAPI.AddFakeDocuments("fake-data", 100)
+	res, err := s.OpensearchAPI.AddFakeDocuments("go-test-index2", 20000)
 
 	if err != nil {
+		slog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

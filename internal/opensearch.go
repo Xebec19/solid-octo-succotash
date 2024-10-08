@@ -4,16 +4,17 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/opensearch-project/opensearch-go"
-	"github.com/opensearch-project/opensearch-go/opensearchapi"
+	opensearch "github.com/opensearch-project/opensearch-go"
+	opensearchapi "github.com/opensearch-project/opensearch-go/opensearchapi"
 )
 
 type OpensearchAPI struct {
-	client *opensearch.Client
+	Client *opensearch.Client
 }
 
 func createOpensearchClient(host, port, username, password string) (*opensearch.Client, error) {
@@ -40,27 +41,32 @@ func NewOpensearchClient(host, port, username, password string) (*OpensearchAPI,
 		return nil, err
 	}
 
+	slog.Info(fmt.Sprint(opClient.Info()))
+
 	return &OpensearchAPI{
-		client: opClient,
+		Client: opClient,
 	}, nil
 }
 
 func (oapi *OpensearchAPI) CreateIndex(indexName string) (*opensearchapi.Response, error) {
 	settings := strings.NewReader(`{
-		'settings': {
-			'index': {
-				'number_of_shards': 1,
-				'number_of_replicas': 0
-				}
-			}
+		"settings": {
+		  "index": {
+			   "number_of_shards": 1,
+			   "number_of_replicas": 2
+			   }
+			 }
 		}`)
 
-	req := opensearchapi.IndicesCreateRequest{
+	// Create an index with non-default settings.
+	res := opensearchapi.IndicesCreateRequest{
 		Index: indexName,
 		Body:  settings,
 	}
 
-	response, err := req.Do(context.Background(), oapi.client)
+	slog.Info(fmt.Sprint(res))
+
+	response, err := res.Do(context.Background(), oapi.Client)
 
 	return response, err
 }
@@ -71,7 +77,7 @@ func (oapi *OpensearchAPI) DeleteIndex(indexName string) (*opensearchapi.Respons
 		Index: []string{indexName},
 	}
 
-	response, err := req.Do(context.Background(), oapi.client)
+	response, err := req.Do(context.Background(), oapi.Client)
 
 	return response, err
 }
@@ -81,7 +87,7 @@ func (oapi *OpensearchAPI) AddFakeDocuments(indexName string, count int) (*opens
 	var builder strings.Builder
 
 	for i := 0; i < count; i++ {
-		builder.WriteString(fmt.Sprintf(`{ "index" : { "_index" : "go-test-index1", "_id" : "%s" } }`, gofakeit.UUID()))
+		builder.WriteString(fmt.Sprintf(`{ "index" : { "_index" : "%s", "_id" : "%s" } }`, indexName, gofakeit.UUID()))
 		builder.WriteString("\n")
 
 		// Add the actual document
@@ -92,7 +98,7 @@ func (oapi *OpensearchAPI) AddFakeDocuments(indexName string, count int) (*opens
 	// Convert the built string to an io.Reader
 	reader := strings.NewReader(builder.String())
 
-	blk, err := oapi.client.Bulk(reader)
+	blk, err := oapi.Client.Bulk(reader)
 
 	return blk, err
 }
