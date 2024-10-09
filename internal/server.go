@@ -30,6 +30,8 @@ func (s *Server) NewServer() *http.Server {
 
 	api.HandleFunc("/add-document", s.AddFakeData).Methods("POST")
 
+	api.HandleFunc("/search", s.FetchData).Methods("GET")
+
 	return &http.Server{
 		Handler:  api,
 		Addr:     fmt.Sprintf(":%s", s.Port),

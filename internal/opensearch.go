@@ -102,3 +102,26 @@ func (oapi *OpensearchAPI) AddFakeDocuments(indexName string, count int) (*opens
 
 	return blk, err
 }
+
+func (opai *OpensearchAPI) SearchData(indexName string) (*opensearchapi.Response, error) {
+	search := opensearchapi.SearchRequest{
+		Index: []string{indexName},
+		Body: strings.NewReader(`{
+			"query": {
+				"match_all": {}
+			}
+		}`),
+	}
+
+	searchResponse, err := search.Do(context.Background(), opai.Client)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// slog.Info(fmt.Sprint(searchResponse))
+
+	// defer searchResponse.Body.Close()
+
+	return searchResponse, err
+}

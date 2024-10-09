@@ -33,5 +33,23 @@ func (s *Server) AddFakeData(w http.ResponseWriter, r *http.Request) {
 	slog.Info(res.String())
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
+	json.NewEncoder(w).Encode(res)
+}
+
+func (s *Server) FetchData(w http.ResponseWriter, r *http.Request) {
+
+	res, err := s.OpensearchAPI.SearchData("go-test-index2")
+
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info(res.String())
+
+	defer res.Body.Close()
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(res.String())
 }
