@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
 	opensearch "github.com/opensearch-project/opensearch-go"
@@ -111,6 +112,7 @@ func (opai *OpensearchAPI) SearchData(indexName string) (*opensearchapi.Response
 				"match_all": {}
 			}
 		}`),
+		Scroll: time.Minute,
 	}
 
 	searchResponse, err := search.Do(context.Background(), opai.Client)
