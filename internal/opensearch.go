@@ -92,7 +92,7 @@ func (oapi *OpensearchAPI) AddFakeDocuments(indexName string, count int) (*opens
 		builder.WriteString("\n")
 
 		// Add the actual document
-		builder.WriteString(fmt.Sprintf(`{ "title" : "Movie %s", "director" : "Director %s", "year" : "%d" }`, gofakeit.MovieName(), gofakeit.Name(), gofakeit.Year()))
+		builder.WriteString(fmt.Sprintf(`{ "title" : "%s", "director" : "%s", "year" : "%d" }`, gofakeit.MovieName(), gofakeit.Name(), gofakeit.Year()))
 		builder.WriteString("\n")
 	}
 
@@ -105,25 +105,56 @@ func (oapi *OpensearchAPI) AddFakeDocuments(indexName string, count int) (*opens
 }
 
 func (opai *OpensearchAPI) SearchData(indexName string) (*opensearchapi.Response, error) {
-	search := opensearchapi.SearchRequest{
-		Index: []string{indexName},
-		Body: strings.NewReader(`{
-			"query": {
-				"match_all": {}
-			}
-		}`),
-		Scroll: time.Minute,
-	}
-
-	searchResponse, err := search.Do(context.Background(), opai.Client)
+	res, err := opai.Client.Search(
+		opai.Client.Search.WithIndex(indexName),
+		opai.Client.Search.WithSize(3),
+		opai.Client.Search.WithScroll(time.Minute),
+		opai.Client.Search.WithSort("_id"),
+		// opai.Client.Search.WithSize(10),
+	)
 
 	if err != nil {
 		return nil, err
 	}
 
-	// slog.Info(fmt.Sprint(searchResponse))
+	slog.Info(fmt.Sprint(res))
 
-	// defer searchResponse.Body.Close()
+	return res, err
 
-	return searchResponse, err
+}
+
+func (opai *OpensearchAPI) SearchDataWithScroll(indexName, scrollID string) (*opensearchapi.Response, error) {
+
+	res, err := opai.Client.Scroll(
+		// opai.Client.Search.WithIndex(indexName),
+		// opai.Client.Search.WithScrollID(scrollID),
+		// opai.Client.Search.WithSort("")
+		// opai.Client.Search.WithSize(10),
+		// opai.Client.Search.WithScroll(time.Minute),
+		opai.Client.Scroll.WithScrollID(scrollID),
+		opai.Client.Scroll.WithScroll(time.Minute))
+
+	if err != nil {
+		return nil, err
+	}
+
+	slog.Info(fmt.Sprint(res))
+
+	return res, err
+
+	// search := opensearchapi.SearchRequest{
+	// 	Index: []string{indexName},
+	// 	Body: strings.NewReader(fmt.Sprintf(`{
+	// 		"scroll": "1m",
+	// 		"scroll_id": "%s"
+	// 	}`, scrollID)),
+	// }
+
+	// searchResponse, err := search.Do(context.Background(), opai.Client)
+
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// return searchResponse, err
 }

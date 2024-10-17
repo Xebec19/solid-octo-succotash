@@ -40,6 +40,44 @@ func (s *Server) AddFakeData(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) FetchData(w http.ResponseWriter, r *http.Request) {
 
+	scrollID := r.URL.Query().Get("scrollID")
+
+	if scrollID != "" {
+		res, err := s.OpensearchAPI.SearchDataWithScroll("go-test-index2", scrollID)
+
+		if err != nil {
+			slog.Error(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		slog.Info(res.String())
+
+		defer res.Body.Close()
+
+		// Copy the response body to a new buffer
+		var buf bytes.Buffer
+		if _, err := io.Copy(&buf, res.Body); err != nil {
+			slog.Error("Failed to read response body", "error", err)
+			http.Error(w, "Failed to read response", http.StatusInternalServerError)
+			return
+		}
+
+		// Reset the response body with the copied data
+		res.Body = io.NopCloser(&buf)
+
+		// Write the complete response body to the client
+		if _, err := io.Copy(w, &buf); err != nil {
+			slog.Error("Failed to write response to client", "error", err)
+			http.Error(w, "Failed to send response", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
 	res, err := s.OpensearchAPI.SearchData("go-test-index2")
 
 	if err != nil {
@@ -52,7 +90,6 @@ func (s *Server) FetchData(w http.ResponseWriter, r *http.Request) {
 
 	defer res.Body.Close()
 
-	w.WriteHeader(http.StatusOK)
 	// Copy the response body to a new buffer
 	var buf bytes.Buffer
 	if _, err := io.Copy(&buf, res.Body); err != nil {
@@ -65,7 +102,6 @@ func (s *Server) FetchData(w http.ResponseWriter, r *http.Request) {
 	res.Body = io.NopCloser(&buf)
 
 	// Set the content type to JSON
-	w.Header().Set("Content-Type", "application/json")
 
 	// Write the complete response body to the client
 	if _, err := io.Copy(w, &buf); err != nil {
@@ -74,4 +110,6 @@ func (s *Server) FetchData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
 }
